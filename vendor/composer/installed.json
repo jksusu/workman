@@ -1,0 +1,48 @@
+[
+    {
+        "name": "workerman/mysql",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/walkor/mysql.git",
+            "reference": "37425f7479cc345205c1e4802442f1e23fab6db0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/walkor/mysql/zipball/37425f7479cc345205c1e4802442f1e23fab6db0",
+            "reference": "37425f7479cc345205c1e4802442f1e23fab6db0",
+            "shasum": "",
+            "mirrors": [
+                {
+                    "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                    "preferred": true
+                }
+            ]
+        },
+        "require": {
+            "ext-pdo": "*",
+            "ext-pdo_mysql": "*",
+            "php": ">=5.3"
+        },
+        "time": "2020-06-16T13:20:10+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "Workerman\\MySQL\\": "./src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "description": "Long-living MySQL connection for daemon.",
+        "homepage": "http://www.workerman.net",
+        "keywords": [
+            "mysql",
+            "pdo",
+            "pdo_mysql"
+        ]
+    }
+]
