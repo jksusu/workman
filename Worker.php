@@ -533,15 +533,15 @@ class Worker
     {
         static::checkSapiEnv();//检查环境，设置成员属性 系统
         static::init();//初始化错误回调，设置启动文件路径，转换文件路径，设置pid存放文件，设置日志存放，设置启动开始时间，指定主进程工作文件，pid workid 进程映射，注册定时器信号处理
-        static::parseCommand();
-        static::daemonize();
-        static::initWorkers();
-        static::installSignal();
-        static::saveMasterPid();
-        static::displayUI();
-        static::forkWorkers();
-        static::resetStd();
-        static::monitorWorkers();
+        static::parseCommand();//环境监测，cli输入命令监测，并执行
+        static::daemonize();//后台运行
+        static::initWorkers();//初始化工作实例
+        static::installSignal();//注册安装信号处理
+        static::saveMasterPid();//写入pid到文件中
+        static::displayUI();//显示ui
+        static::forkWorkers();//启动进程
+        static::resetStd();//在 -d 后台运行冲设置输出
+        static::monitorWorkers();//监控子进程
     }
 
     /**
@@ -648,12 +648,13 @@ class Worker
             return;
         }
         foreach (static::$_workers as $worker) {
-            // Worker name.
+
+            // Worker name. 设置work 的名字
             if (empty($worker->name)) {
                 $worker->name = 'none';
             }
 
-            // Get unix user of the worker process.
+            // Get unix user of the worker process.Get unix user of the worker process.
             if (empty($worker->user)) {
                 $worker->user = static::getCurrentUser();
             } else {
@@ -668,7 +669,7 @@ class Worker
             // Status name.
             $worker->status = '<g> [OK] </g>';
 
-            // Get column mapping for UI
+            // Get column mapping for UI 循环给ui赋值。显示在终端
             foreach(static::getUiColumns() as $column_name => $prop){
                 !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
                 $prop_length = \strlen($worker->{$prop});
@@ -676,7 +677,7 @@ class Worker
                 static::$$key = \max(static::$$key, $prop_length);
             }
 
-            // Listen.
+            // Listen. 如果没有开始监听，则开始监听
             if (!$worker->reusePort) {
                 $worker->listen();
             }
@@ -748,11 +749,15 @@ class Worker
 
     /**
      * Get unix user of current porcess.
-     *
+     * 获取当前进程的unix用户名
      * @return string
      */
     protected static function getCurrentUser()
     {
+        /*
+         * posix_getuid();//返回当前进程的真实用户ID
+         * posix_getpwuid();//更具用户ID返回用户真是信息
+         */
         $user_info = \posix_getpwuid(\posix_getuid());
         return $user_info['name'];
     }
@@ -1208,11 +1213,12 @@ class Worker
 
     /**
      * Run as deamon mode.
-     *
+     * 后台运行
      * @throws Exception
      */
     protected static function daemonize()
     {
+        //如果启动命令没设置 -d 则不执行此项
         if (!static::$daemonize || static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
@@ -2190,17 +2196,17 @@ class Worker
      */
     public function __construct($socket_name = '', array $context_option = array())
     {
-        // Save all worker instances.
+        // Save all worker instances. workrId 为当前对象的 hash 值
         $this->workerId                    = \spl_object_hash($this);
-        static::$_workers[$this->workerId] = $this;
-        static::$_pidMap[$this->workerId]  = array();
+        static::$_workers[$this->workerId] = $this;//保存对象到数组中  key = 对象的hash值
+        static::$_pidMap[$this->workerId]  = array();//创建一个 空数组，key = 对象的hash值
 
-        // Get autoload root path.
+        // Get autoload root path. 相当于获取工作目录，根目录
         $backtrace               = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
         Autoloader::setRootPath($this->_autoloadRootPath);
 
-        // Context for socket.
+        // Context for socket.  https://www.php.net/manual/zh/context.socket.php   套接字上下文？
         if ($socket_name) {
             $this->_socketName = $socket_name;
             if (!isset($context_option['socket']['backlog'])) {
@@ -2209,7 +2215,7 @@ class Worker
             $this->_context = \stream_context_create($context_option);
         }
 
-        // Turn reusePort on.
+        // Turn reusePort on. 只有在 linux 系统中运行 reusePort = true
         if (static::$_OS === \OS_TYPE_LINUX  // if linux
             && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
@@ -2231,7 +2237,7 @@ class Worker
             return;
         }
 
-        // Autoload.
+        // Autoload. 自动加载
         Autoloader::setRootPath($this->_autoloadRootPath);
 
         if (!$this->_mainSocket) {
@@ -2366,6 +2372,9 @@ class Worker
      */
     public function getSocketName()
     {
+        /*
+         * lcfirst() 首字母转小写
+         */
         return $this->_socketName ? \lcfirst($this->_socketName) : 'none';
     }
 
