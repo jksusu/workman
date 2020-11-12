@@ -206,7 +206,7 @@ class Worker
 
     /**
      * Transport layer protocol.
-     *
+     * tcp 协议
      * @var string
      */
     public $transport = 'tcp';
@@ -2237,13 +2237,13 @@ class Worker
 
         if (!$this->_mainSocket) {
 
-            $local_socket = $this->parseSocketAddress();
+            $local_socket = $this->parseSocketAddress();//获取套接字地址
 
-            // Flag.
+            // Flag. udp 套接字必须使用  STREAM_SERVER_BIND 作为标志参数。
             $flags = $this->transport === 'udp' ? \STREAM_SERVER_BIND : \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN;
             $errno = 0;
             $errmsg = '';
-            // SO_REUSEPORT.
+            // SO_REUSEPORT. 验证是否是 linux
             if ($this->reusePort) {
                 \stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
             }
@@ -2302,7 +2302,7 @@ class Worker
 
     /**
      * Parse local socket address.
-     *
+     * 解析本地套接字地址
      * @throws Exception
      */
     protected function parseSocketAddress()
@@ -2335,6 +2335,7 @@ class Worker
         } else {
             $this->transport = $scheme;
         }
+        var_dump(static::$_builtinTransports[$this->transport]);
         //local socket
         return static::$_builtinTransports[$this->transport] . ":" . $address;
     }
