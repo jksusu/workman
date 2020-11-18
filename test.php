@@ -4,7 +4,7 @@ use Workerman\Worker;
 require_once __DIR__ . '/vendor/autoload.php';
 
 // Create a Websocket server
-$ws_worker = new Worker('websocket://0.0.0.0:2346');
+$ws_worker = new Worker('websocket://0.0.0.0:9501');
 
 $ws_worker->name = 'test';
 // 4 processes

@@ -1245,11 +1245,14 @@ class Worker
 
     /**
      * Redirect standard input and output.
-     *
+     * 重定向标准输入和输出。前台运行
      * @throws Exception
      */
     public static function resetStd()
     {
+        /*
+         * 如果启动命令设置 -d static::$daemonize = true
+         */
         if (!static::$daemonize || static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
@@ -1530,14 +1533,17 @@ class Worker
             //子进程返回的 pid = 0 子进程开始运行。此时父子进程独立运行。只是 主进程拥有一些其他进程的信息。可以对其他进程进行调度，管控。
             \srand();
             \mt_srand();
-            //验证是否 linux 环境。 true
+            //验证是否 linux 环境。 true 开启子进程，并监听端口
             if ($worker->reusePort) {
                 $worker->listen();
             }
+            //重定向标准输出输入
             if (static::$_status === static::STATUS_STARTING) {
                 static::resetStd();
             }
+            // pid 数组。这是的值数量应该比总数量少一个，因为有一个共同的 父进程
             static::$_pidMap = array();
+
             // Remove other listener.
             foreach (static::$_workers as $key => $one_worker) {
                 if ($one_worker->workerId !== $worker->workerId) {
@@ -2235,6 +2241,7 @@ class Worker
         // Autoload. 自动加载
         Autoloader::setRootPath($this->_autoloadRootPath);
 
+        //如果 socket 不存在
         if (!$this->_mainSocket) {
 
             $local_socket = $this->parseSocketAddress();//获取套接字地址
@@ -2248,7 +2255,7 @@ class Worker
                 \stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
             }
 
-            // Create an Internet or Unix domain server socket.
+            // Create an Internet or Unix domain server socket. 创建一个套接字服务器
             $this->_mainSocket = \stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
             if (!$this->_mainSocket) {
                 throw new Exception($errmsg);
@@ -2270,13 +2277,19 @@ class Worker
             if (\function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
                 \set_error_handler(function () {
                 });
+                /*
+                 * 导入将套接字封装到套接字扩展资源的流。
+                 */
                 $socket = \socket_import_stream($this->_mainSocket);
                 \socket_set_option($socket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
                 \socket_set_option($socket, \SOL_TCP, \TCP_NODELAY, 1);
                 \restore_error_handler();
             }
 
-            // Non blocking.
+            /*
+             * 为资源流设置阻塞或者阻塞模式如果 mode 为 FALSE，资源流将会被转换为非阻塞模式
+             * https://www.php.net/manual/zh/function.stream-set-blocking.php
+             */
             \stream_set_blocking($this->_mainSocket, false);
         }
 
@@ -2335,14 +2348,13 @@ class Worker
         } else {
             $this->transport = $scheme;
         }
-        var_dump(static::$_builtinTransports[$this->transport]);
         //local socket
         return static::$_builtinTransports[$this->transport] . ":" . $address;
     }
 
     /**
      * Pause accept new connections.
-     *
+     * 暂停接受新的连接
      * @return void
      */
     public function pauseAccept()
@@ -2363,6 +2375,7 @@ class Worker
         // Register a listener to be notified when server socket is ready to read.
         if (static::$globalEvent && true === $this->_pauseAccept && $this->_mainSocket) {
             if ($this->transport !== 'udp') {
+                //如果不是 udp 则回调 acceptConnection 方法处理
                 static::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
                 static::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptUdpConnection'));
@@ -2475,7 +2488,7 @@ class Worker
 
     /**
      * Accept a connection.
-     *
+     * 链接事件触发方法
      * @param resource $socket
      * @return void
      */

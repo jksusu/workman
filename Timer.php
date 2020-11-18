@@ -209,6 +209,10 @@ class Timer
     public static function delAll()
     {
         self::$_tasks = self::$_status = array();
+        /*
+         * 为进程设置一个alarm闹钟信号
+         * 创建一个计时器，在指定的秒数后向进程发送一个SIGALRM信号。每次对 pcntl_alarm()的调用都会取消之前设置的alarm信号。
+         */
         \pcntl_alarm(0);
         if (self::$_event) {
             self::$_event->clearAllTimer();
